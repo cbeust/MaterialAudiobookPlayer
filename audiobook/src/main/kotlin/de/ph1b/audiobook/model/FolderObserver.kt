@@ -66,7 +66,7 @@ class FolderObserver(private val toObserve: File) {
         return Observable.from(listFiles(filter)?.asList() ?: Collections.emptyList())
     }
 
-    private fun scanInnerLayers(nextFile: File, gatheredFiles: ArrayList<File>, filter: FileFilter) {
+    private fun scanInnerLayers(nextFile: File, gatheredFiles: MutableList<File>, filter: FileFilter) {
         nextFile.contents(filter)
                 .subscribe {
                     gatheredFiles.add(it)
