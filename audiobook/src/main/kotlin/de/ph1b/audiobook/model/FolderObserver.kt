@@ -36,6 +36,13 @@ class FolderObserver(private val toObserve: File) {
         scanInnerLayers(toObserve, contents, { isDirectory })
         contents.add(toObserve)
         Timber.i("contents=$contents")
+
+        val containingFiles = ArrayList<File>()
+        val isFilePredicate: File.() -> Boolean = { isFile }
+        contents.forEach {
+            scanInnerLayers(it, containingFiles, isFilePredicate)
+        }
+        Timber.i("containingFiles=$containingFiles")
     }
 
     private fun File.contents(): Observable<File> {
