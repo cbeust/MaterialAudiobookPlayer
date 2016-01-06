@@ -20,6 +20,7 @@ package de.ph1b.audiobook.utils
 import android.os.Build
 import com.google.common.collect.Lists
 import com.google.common.io.Files
+import java.io.File
 import java.io.FileFilter
 import java.util.*
 
@@ -62,22 +63,17 @@ object FileRecognition {
         }
     }
 
+    private fun File.extensionToLowerCase() = Files.getFileExtension(name)
+            .toLowerCase()
+
+    private fun File.isAudio(): Boolean {
+        return audioTypes.contains(extensionToLowerCase())
+    }
+
     val folderAndMusicFilter = FileFilter {
-        if (it.isDirectory) {
-            return@FileFilter true
-        } else {
-            val extension = Files.getFileExtension(it.name)
-                    .toLowerCase()
-            return@FileFilter audioTypes.contains(extension)
-        }
+        it.isDirectory || it.isAudio()
     }
     val folderAndImagesFilter = FileFilter {
-        if (it.isDirectory) {
-            return@FileFilter true
-        } else {
-            val extension = Files.getFileExtension(it.name)
-                    .toLowerCase()
-            return@FileFilter imageTypes.contains(extension)
-        }
+        it.isDirectory || imageTypes.contains(it.extensionToLowerCase())
     }
 }
