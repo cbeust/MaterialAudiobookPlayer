@@ -17,10 +17,10 @@
 
 package de.ph1b.audiobook.model
 
-import android.os.FileObserver
 import de.ph1b.audiobook.utils.FileRecognition
 import rx.Observable
 import rx.subjects.PublishSubject
+import rx.subscriptions.CompositeSubscription
 import timber.log.Timber
 import java.io.File
 import java.io.FileFilter
@@ -35,11 +35,10 @@ class FolderObserver(private val toObserve: File) {
         check(toObserve.isDirectory)
     }
 
-    private val internalObservers = ArrayList<FileObserver>()
+    private val internalObservers = CompositeSubscription()
     private val notifySubject = PublishSubject.create<Unit>()
 
     fun startObserving() {
-
         // first collect all directories
         val contents = ArrayList<File>()
         contents.add(toObserve)
@@ -58,27 +57,8 @@ class FolderObserver(private val toObserve: File) {
 
         // set up FileObservers for each directory
         containingFiles.forEach {
-            val fileObserver = object : FileObserver(it.absolutePath) {
-                override fun onEvent(event: Int, path: String?) {
-                    when (event) {
-                        FileObserver.CREATE,
-                        FileObserver.DELETE, FileObserver.DELETE_SELF,
-                        FileObserver.MOVED_FROM, FileObserver.MOVED_TO, FileObserver.MOVE_SELF,
-                        FileObserver.MODIFY -> {
-                            if (path != "materialaudiobookplayer.log") {
-                                // only notify if its a music file or folder
-                                if (path == null || FileRecognition.folderAndMusicFilter.accept(File(it, path))) {
-                                    Timber.i("onEvent fired with $event and $path. Calling subject now.")
-                                    notifySubject.onNext(Unit)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            Timber.i("Added observer for $it")
-            fileObserver.startWatching()
-            internalObservers.add(fileObserver)
+            internalObservers.add(SingleFileObserverFactory.observeChanges(it, FileRecognition.folderAndMusicFilter)
+                    .subscribe { notifySubject.onNext(Unit) })
         }
     }
 
